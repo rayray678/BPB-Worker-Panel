@@ -1,9 +1,13 @@
-name: Build and Deploy Worker
+name: BPB-构建和部署 Worker
+#name: Build and Deploy Worker
 
 on:
   push:
-    branches:
-      - dev
+#    branches: # 分支更新运行
+#      - main
+    paths:
+      - 'BPB/**' # 仅当 BPB 文件夹下的文件发生变化时触发
+  workflow_dispatch: # 允许手动触发工作流
 
 permissions:
   contents: write
@@ -26,8 +30,18 @@ jobs:
 
       - name: Build project
         run: |
-          npx wrangler deploy src/worker.js --name bpb-worker-panel --compatibility-flag [nodejs_compat] --compatibility-date 2024-10-26 --dry-run --outdir=dist
-          npx javascript-obfuscator --split-strings true --split-strings-chunk-length 2 dist/worker.js --output _worker.js
+          npx wrangler deploy BPB/worker.js --name bpb-worker-panel --compatibility-flag [nodejs_compat] --compatibility-date 2024-10-26 --dry-run --outdir=dist
+          npx javascript-obfuscator dist/worker.js --output _worker.js \
+            --compact true \
+            --control-flow-flattening true \
+            --control-flow-flattening-threshold 0.2 \
+            --identifier-names-generator hexadecimal \
+            --rename-globals true \
+            --string-array true \
+            --string-array-encoding 'rc4' \
+            --string-array-threshold 0.3 \
+            --transform-object-keys true \
+            --unicode-escape-sequence true
 
       - name: Commit and push built worker
         run: |
